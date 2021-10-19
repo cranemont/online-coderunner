@@ -38,9 +38,11 @@ export default {
     },
     methods: {
         run () {
-            this.socket = io('http://172.29.11.80:3000', { reconnection: false })
+            this.socket = io('http://localhost:3000', { reconnection: false })
             this.socket.on('stdout', (output) => {
-                this.stdout += this.encoder.decode(output)
+              console.log("GET DATA")
+                // this.stdout += this.encoder.decode(output)
+                this.stdout += output
             })
             this.socket.on('exited', (code) => {
               console.log("EXITED")
