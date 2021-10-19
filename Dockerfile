@@ -3,7 +3,6 @@ FROM ubuntu:18.04
 # COPY build/java_policy /etc
 # RUN sed -E -i -e 's/(archive|ports).ubuntu.com/mirrors.aliyun.com/g' -e '/security.ubuntu.com/d' /etc/apt/sources.list
 # ENV DEBIAN_FRONTEND=noninteractive
-COPY package.json /tmp
 
 RUN buildDeps='software-properties-common git libtool cmake python-dev python3-pip python-pip libseccomp-dev curl' && \
     apt-get update && apt-get install -y python python3 python-pkg-resources python3-pkg-resources $buildDeps && \
@@ -22,7 +21,8 @@ RUN buildDeps='software-properties-common git libtool cmake python-dev python3-p
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     mkdir -p /code && \
     useradd -u 12001 compiler && useradd -u 12002 code && useradd -u 12003 spj && usermod -a -G code spj && \
-    cd code && npm install
+    cd code && npm install && \
+    mkdir compile
 # HEALTHCHECK --interval=5s --retries=3 CMD python3 /code/service.py
 ADD server /code
 WORKDIR /code
