@@ -1,78 +1,78 @@
 var app = require("express")();
 var server = require("http").createServer(app);
 var io = require("socket.io")(server);
-var fs = require("fs");
-var bodyParser = require('body-parser');
-var jsonParser = bodyParser.json();
+var jsonParser = require('body-parser').json();
 const pty = require("node-pty");
-const execSync = require("child_process").execSync;
-// app.get('/', (req, res, next) => {
-//     res.send("Connected to the server");
-//     console.log("Connection");
-//     next();
-// })
+const compiler = require("./compiler");
+const cleanUp = require("./file_manager").cleanUp;
+const purify = require("./formatter").purifyPath;
+const runFormat = require("./formatter").runFormat;
+const checkLanguage = require("./formatter").checkLanguage;
+const fs = require("fs");
+const BASE_DIR = require("./constants").WORKSPACE_BASE;
 app.use(require('cors')());
 app.use(jsonParser);
-app.get('/', (req, res) => {
-    res.send("Run program");
-})
 
-app.post('/compile', (req, res) => {
-    // var compile_err = null;
-    // var compile_exit_code = null;
-    function compile_response(compile_err=null) {
-        if (compile_err !== null) {
-            res.send({"Compile error": compile_err});
-        } else {
-            res.send("Compile Success");
-        }
-    }
-    function systemSync() {
+app.post("/compile", async (req, res) => {
+    const dir = Math.random().toString(36).substr(2,11);
+    const lang = req.body.lang;
+    const code = req.body.code;
+    try {
+        await compiler.compile(dir, lang, code);
+        //TODO: save dir to redis(with timeout)
+        res.send({"status": 1, "output": dir});
+    } catch (err) {
         try {
-            var compile = execSync("/usr/bin/gcc /tmp/main.c");
-            // compile.stderr.on('data', (data) => {
-            //     console.log("%s", data);
-            //     compile_err = data;
-            // });
-            // compile.on("exit", (data) => {
-            //     compile_exit_code = data;
-            // })
-            console.log(compile);
-            compile_response(compile);
-        } catch (err) {
-            compile_response(err);
-            // console.log(err);
+            await cleanUp(dir);
+        } catch (cleanupErr) {
+            console.log(cleanupErr);
         }
+        console.log(err);
+        res.send({"status": 0, "output": err});
     }
-    
-    var file = "/tmp/main.c";
-    console.log(req.body);
-    fs.writeFile(file, req.body.code, 'utf8', (err) => {
-        if(err) throw err;
-        console.log("code write");
-        systemSync();
-    })
-    
-    
-    // console.log(compile_err)
-    
-    // res.send({''});
 })
-io.on("connection", (socket) => {
-    // var shell = pty.spawn("./libjudger.so", ['--exe_path=/usr/bin/python3', '--args=test.py', '--seccomp_rule_name=general']);
-    var shell = pty.spawn("./libjudger.so", ['--exe_path=./a.out', '--seccomp_rule_name=c_cpp']);
-    shell.on('data', (data) => {
-        console.log("%s", data);
-        socket.emit("stdout", data);
-    });
-    socket.on("stdin", (input) => {
-        console.log("%s", input);
-        shell.write(input + "\n");
-    });
-    shell.on("exit", (code) => {
-        console.log("child process exited with code " + code);
-        socket.emit("exited", code);
-    });
+//TODO: handshake, Run 분리
+//FIXME: token(dir)을 redis로 옮겨서 관리?
+io.on("connection", async(socket) => {
+    try {
+        var dir = socket.handshake.query['token'];
+        var lang = socket.handshake.query['lang'];
+        await purify(dir).then((value) => { dir = value; })
+        await checkLanguage(lang).then((value) => { if(!value) throw new Error("Unsupported language"); })
+        //TODO: find dir from redis, disconnect if not exists
+
+        if(!fs.existsSync(BASE_DIR + dir)) {
+            socket.disconnect(); 
+        } else {
+            const shell = pty.spawn("/usr/lib/judger/libjudger.so", runFormat(dir, lang));
+            shell.on('data', (data) => {
+                console.log("%s", data);
+                socket.emit("stdout", data);
+            });
+            socket.on("stdin", (input) => {
+                console.log("%s", input);
+                shell.write(input + "\n");
+            });
+            shell.on("exit", async(code) => {
+                console.log("child process exited with code " + code);
+                console.log(dir);
+                if(dir) {
+                    try {
+                        await cleanUp(dir);
+                    } catch (err) {
+                        console.log(err);
+                    } finally {
+                        //TODO: remove dir from redis
+                        socket.emit("exited", code);
+                        socket.disconnect();
+                    }
+                }
+            });
+        }
+    } catch (err) {
+        console.log(err);
+        socket.disconnect();
+    }
 });
 
 server.listen(3000, () => {

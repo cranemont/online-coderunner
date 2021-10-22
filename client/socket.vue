@@ -1,61 +1,80 @@
 <template>
   <div>
+    <h1>Code</h1>
     <form>
-      <h1>Connect</h1>
+      <p><textarea cols="100" rows="20" v-model="code"></textarea></p>
+      <button type="button" value="Connect" @click="compile()">compile</button>
+    </form>
+    <h1>Run</h1>
+    <form>
       <button type="button" value="Connect" @click="run()">Run</button>
     </form>
-    <form>
-      <h1>Disconnect</h1>
-      <button type="button" value="Disconnect" @click="disconnect()">Disconnect</button>
-    </form>
-    <h2> stdin </h2>
+    <h1> stdin </h1>
     <form>
       <input type="text" v-model="stdin">
-      <button type="button" value="input" @click="postStdin()" />
+      <button type="button" value="input" @click="postStdin()">input</button>
     </form>
-    <h2> stdout </h2>
-    {{ stdout }}
-    {{ exitcode }}
+    <h1> stdout </h1>
+    <p>{{ stdout }}</p>
+    <h1> stderr </h1>
+    <p>{{ stderr }}</p>
+    <h1> exit code </h1>
+    <p>{{ exitcode }}</p>
   </div>
 </template>
 
 <script>
 import io from 'socket.io-client'
-
+import axios from 'axios'
 export default {
     name: 'socket',
     data () {
         return {
             stdin: '',
             stdout: '',
+            stderr: '',
             socket: '',
             encoder: '',
             exitcode: '',
+            code: '',
+            compileResult: '',
+            dir: null,
+            lang: "cpp"
         }
-    },
-    mounted () {
-      this.encoder = new TextDecoder("utf-8")
     },
     methods: {
         run () {
-            this.socket = io('http://localhost:3000', { reconnection: false })
-            this.socket.on('stdout', (output) => {
-              console.log("GET DATA")
-                // this.stdout += this.encoder.decode(output)
-                this.stdout += output
-            })
-            this.socket.on('exited', (code) => {
-              console.log("EXITED")
-                this.exitcode += code
-                this.socket.disconnect()
-            })
+          if(this.dir === null){
+            console.log("Not compiled yet")
+            return
+          }
+          this.stdout = ''
+          this.stderr = ''
+          this.socket = io.connect('http://localhost:8900', { reconnection: false, query: {'token':this.dir, 'lang': this.lang} })
+          this.socket.on('stdout', (output) => {
+            this.stdout += '\n' + output
+          })
+          this.socket.on('exited', (code) => {
+            this.exitcode += code
+            // this.socket.disconnect();
+          })
         },
         postStdin () {
-            this.socket.emit('stdin', this.stdin)
+          this.socket.emit('stdin', this.stdin)
         },
-        disconnect () {
-            // this.socket.off('stdout') // ??
-            this.socket.disconnect()
+        async compile () {
+          try {
+            const res = await axios.post('http://localhost:8900/compile', {'lang': this.lang, 'code': this.code})
+            console.log(res.data)
+            this.stderr = ''
+            if (res.data.status !== 1) {
+              this.stderr = res.data.output
+            } else {
+              this.dir = res.data.output
+            }
+          } catch (err) {
+            console.log(err)
+          }
         }
     }
 }
