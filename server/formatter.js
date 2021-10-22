@@ -11,12 +11,12 @@ async function checkLanguage (lang) {
         resolve(["c", "cpp", "py2", "py3"].includes(lang));
     })
 }
-// TODO: Add limits
+// TODO: !! IMPORTANT !! Add limits !!
 // TODO: set user group?
 // TODO: Add settings for java
 // TODO: Set python env
 // TODO: Timeout 설정
-function runFormat (dir, lang) {
+function makeRunFormat (dir, lang) {
     var _dir = dir;
     const exe_name = lang_config[lang].compile.exe_name;
     const run_config = lang_config[lang].run;
@@ -32,4 +32,4 @@ function runFormat (dir, lang) {
     exe_path = "--exe_path=" + exe_path;
     return [exe_path, seccomp_rule, env];
 }
-module.exports = {purifyPath, checkLanguage, runFormat}
+module.exports = {purifyPath, checkLanguage, makeRunFormat}

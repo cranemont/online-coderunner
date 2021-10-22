@@ -1,15 +1,16 @@
-var app = require("express")();
-var server = require("http").createServer(app);
-var io = require("socket.io")(server);
-var jsonParser = require('body-parser').json();
+const fs = require("fs");
+const app = require("express")();
+const server = require("http").createServer(app);
+const io = require("socket.io")(server);
 const pty = require("node-pty");
+const jsonParser = require('body-parser').json();
+
 const compiler = require("./compiler");
 const cleanUp = require("./file_manager").cleanUp;
-const purify = require("./formatter").purifyPath;
-const runFormat = require("./formatter").runFormat;
-const checkLanguage = require("./formatter").checkLanguage;
-const fs = require("fs");
+const { purifyPath, makeRunFormat, checkLanguage }  = require("./formatter");
 const BASE_DIR = require("./constants").WORKSPACE_BASE;
+
+
 app.use(require('cors')());
 app.use(jsonParser);
 
@@ -37,14 +38,14 @@ io.on("connection", async(socket) => {
     try {
         var dir = socket.handshake.query['token'];
         var lang = socket.handshake.query['lang'];
-        await purify(dir).then((value) => { dir = value; })
+        await purifyPath(dir).then((value) => { dir = value; })
         await checkLanguage(lang).then((value) => { if(!value) throw new Error("Unsupported language"); })
         //TODO: find dir from redis, disconnect if not exists
 
         if(!fs.existsSync(BASE_DIR + dir)) {
             socket.disconnect(); 
         } else {
-            const shell = pty.spawn("/usr/lib/judger/libjudger.so", runFormat(dir, lang));
+            const shell = pty.spawn("/usr/lib/judger/libjudger.so", makeRunFormat(dir, lang));
             shell.on('data', (data) => {
                 console.log("%s", data);
                 socket.emit("stdout", data);
