@@ -1,6 +1,13 @@
 <template>
   <div>
     <h1>Code</h1>
+    <select v-model="lang">
+      <option disabled value="">languages</option>
+      <option>c</option>
+      <option>cpp</option>
+      <option>py2</option>
+      <option>py3</option>
+    </select>
     <form>
       <p><textarea cols="100" rows="20" v-model="code"></textarea></p>
       <button type="button" value="Connect" @click="compile()">compile</button>
@@ -39,7 +46,7 @@ export default {
             code: '',
             compileResult: '',
             dir: null,
-            lang: "cpp"
+            lang: ''
         }
     },
     methods: {
