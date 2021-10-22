@@ -15,6 +15,7 @@ async function checkLanguage (lang) {
 // TODO: set user group?
 // TODO: Add settings for java
 // TODO: Set python env
+// TODO: Timeout 설정
 function runFormat (dir, lang) {
     var _dir = dir;
     const exe_name = lang_config[lang].compile.exe_name;
