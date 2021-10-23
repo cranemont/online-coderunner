@@ -1,1 +1,23 @@
 #log파일 연결하기
+version: "3.8"
+services:
+  coderunner:
+    image: coc0a25/coderunner:0.1
+    container_name: coderunner
+    restart: always
+    read_only: true
+    cap_drop:
+      - SETPCAP
+      - MKNOD
+      - NET_BIND_SERVICE
+      - SYS_CHROOT
+      - SETFCAP
+      - FSETID
+    tmpfs:
+      - /tmp
+      - /code
+      - /log
+    volumes:
+      - ./log:/logger
+    ports:
+    - "0.0.0.0:8900:3000"
