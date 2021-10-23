@@ -1,4 +1,4 @@
-const WORKSPACE_BASE = "/coderun/"
+const WORKSPACE_BASE = "/code/"
 const LOG_BASE = "/log/"
 
 const COMPILER_LOG_PATH = LOG_BASE + "compile.log"

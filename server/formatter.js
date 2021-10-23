@@ -1,4 +1,5 @@
 const lang_config = require("./languages");
+const WORKSPACE_BASE = require("./constants").WORKSPACE_BASE;
 
 async function purifyPath (dir) {
     return new Promise(resolve => {
@@ -22,7 +23,7 @@ function makeRunFormat (dir, lang) {
     const run_config = lang_config[lang].run;
     const seccomp_rule = "--seccomp_rule_name=" + run_config.seccomp_rule;
     const env = "--env=" + run_config.env;
-    var exe_path = "/coderun/" + _dir + "/" + exe_name;
+    var exe_path = WORKSPACE_BASE + _dir + "/" + exe_name;
     if (lang === "py2") {
         return ["--exe_path=/usr/bin/python2", "--args="+exe_path, seccomp_rule];
     }

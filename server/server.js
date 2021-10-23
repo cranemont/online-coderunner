@@ -39,6 +39,7 @@ app.post("/compile", async (req, res) => {
 })
 //TODO: handshake, Run 분리
 //FIXME: token(dir)을 redis로 옮겨서 관리?
+//FIXME: Run이 여러번 되면 zombie 프로세스 생성 가능, 세션당 한번만 실행할수 있게 변경, 타임아웃으로도 관리 가능하나 불안정
 io.on("connection", async(socket) => {
     try {
         var dir = socket.handshake.query['token'];
