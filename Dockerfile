@@ -13,11 +13,7 @@ RUN buildDeps='software-properties-common git libtool cmake python-dev python3-p
     cd /sandbox && cmake CMakeLists.txt && make && make install && \
     apt-get purge -y --auto-remove $buildDeps && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    # mkdir -p /sandbox && mkdir -p /code && \
     useradd -u 12001 compiler && useradd -u 12002 server
-
-# ADD sandbox /sandbox
-# RUN cd /sandbox && cmake CMakeLists.txt && make && make install
 
 ADD server /server
 RUN cd /server && npm install

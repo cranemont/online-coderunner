@@ -25,7 +25,6 @@ app.post("/compile", async (req, res) => {
     const code = req.body.code;
     try {
         await compiler.compile(dir, lang, code);
-        //TODO: save dir to redis(with timeout)
         res.send({"status": 1, "output": dir});
     } catch (err) {
         try {
@@ -38,7 +37,6 @@ app.post("/compile", async (req, res) => {
     }
 })
 //TODO: handshake, Run 분리
-//FIXME: token(dir)을 redis로 옮겨서 관리?
 //FIXME: Run이 여러번 되면 zombie 프로세스 생성 가능, 세션당 한번만 실행할수 있게 변경, 타임아웃으로도 관리 가능하나 불안정
 io.on("connection", async(socket) => {
     try {
@@ -46,7 +44,6 @@ io.on("connection", async(socket) => {
         var lang = socket.handshake.query['lang'];
         await purifyPath(dir).then((value) => { dir = value; })
         await checkLanguage(lang).then((value) => { if(!value) throw new Error("Unsupported language"); })
-        //TODO: find dir from redis, disconnect if not exists
 
         if(!fs.existsSync(BASE_DIR + dir)) {
             socket.disconnect(); 
@@ -69,8 +66,7 @@ io.on("connection", async(socket) => {
                     } catch (err) {
                         console.log(err);
                     } finally {
-                        //TODO: remove dir from redis
-                        socket.emit("exited", code);
+                        socket.emit("exited");
                         socket.disconnect();
                     }
                 }
