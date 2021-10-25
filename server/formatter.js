@@ -12,11 +12,10 @@ async function checkLanguage (lang) {
         resolve(["c", "cpp", "py2", "py3"].includes(lang));
     })
 }
-// TODO: !! IMPORTANT !! Add limits !!
-// TODO: set user group?
+
+// TODO: Add limits
 // TODO: Add settings for java
 // TODO: Set python env
-// TODO: Timeout 설정
 function makeRunFormat (dir, lang) {
     var _dir = dir;
     const exe_name = lang_config[lang].compile.exe_name;

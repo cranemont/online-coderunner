@@ -15,7 +15,7 @@ const cleanUp = require("./file_manager").cleanUp;
 const { purifyPath, makeRunFormat, checkLanguage }  = require("./formatter");
 const BASE_DIR = require("./constants").WORKSPACE_BASE;
 
-
+// TODO: redirect errors to log file
 app.use(require('cors')());
 app.use(jsonParser);
 
@@ -36,8 +36,8 @@ app.post("/compile", async (req, res) => {
         res.send({"status": 0, "output": err});
     }
 })
+
 //TODO: handshake, Run 분리
-//FIXME: Run이 여러번 되면 zombie 프로세스 생성 가능, 세션당 한번만 실행할수 있게 변경, 타임아웃으로도 관리 가능하나 불안정
 io.on("connection", async(socket) => {
     try {
         var dir = socket.handshake.query['token'];

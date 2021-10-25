@@ -22,11 +22,9 @@
       <button type="button" value="input" @click="postStdin()">input</button>
     </form>
     <h1> stdout </h1>
-    <p>{{ stdout }}</p>
+    <p><textarea cols="50" rows="10" v-model="stdout"></textarea></p>
     <h1> stderr </h1>
     <p>{{ stderr }}</p>
-    <h1> exit code </h1>
-    <p>{{ exitcode }}</p>
   </div>
 </template>
 
@@ -41,12 +39,12 @@ export default {
             stdout: '',
             stderr: '',
             socket: '',
-            encoder: '',
-            exitcode: '',
             code: '',
             compileResult: '',
             dir: null,
-            lang: ''
+            lang: '',
+            lastStdin: '',
+            userinput: false,
         }
     },
     methods: {
@@ -57,17 +55,28 @@ export default {
           }
           this.stdout = ''
           this.stderr = ''
-          this.socket = io.connect('http://localhost:8900', { reconnection: false, query: {'token':this.dir, 'lang': this.lang} })
-          this.socket.on('stdout', (output) => {
-            this.stdout += '\n' + output
+          this.socket = io('http://localhost:8900', {
+            reconnection: false, 
+            query: {
+              'token':this.dir, 
+              'lang': this.lang
+            } 
           })
-          this.socket.on('exited', (code) => {
-            this.exitcode += code
-            // this.socket.disconnect();
+          this.socket.on('stdout', (output) => {
+            if(this.userinput){
+              this.stdout += output.replace(this.stdin, "")
+              this.userinput = false;
+            } else {
+              this.stdout += output
+            }
+          })
+          this.socket.on('exited', () => {
+            console.log("program exited");
           })
         },
         postStdin () {
           this.socket.emit('stdin', this.stdin)
+          this.userinput = true
         },
         async compile () {
           try {

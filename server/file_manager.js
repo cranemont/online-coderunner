@@ -1,6 +1,5 @@
 const fs = require("fs");
 const BASE_DIR = require("./constants").WORKSPACE_BASE;
-// TODO: redirect errors to log file
 
 async function cleanUp(dir) {
     var _dir = BASE_DIR + dir

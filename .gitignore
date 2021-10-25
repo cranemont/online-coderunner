@@ -1,6 +1,3 @@
 .vscode
-__pycache__/
-judger.log
-NodeJS/
 node_modules/
-test.*
+log/
